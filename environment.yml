@@ -1,0 +1,13 @@
+name: whaletracks
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy=1.16
+  - pandas
+  - python
+  - matplotlib
+  - notebook
+  - obspy
+  - nose
+  - scipy
