@@ -42,7 +42,7 @@ setup(
     ],
     install_requires=[
         'pandas',
-        'numpy~=1.16', 
+        'numpy', 
         'scipy',
         'nose',
         'obspy',
