@@ -11,7 +11,7 @@ stores detection metrics in comma-separated variable files.
 
 import sys
 
-sys.path.append('/Users/wader/Desktop/whaletracks/') 
+sys.path.append('/Users/rhilmo/Documents/GitHub/whaletracks') 
 
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
@@ -563,6 +563,7 @@ def main(STARTTIME, ENDTIME,
             analyzer_j.df['peak_epoch']=peak_epoch
             analyzer_j.df['start_epoch']=start_epoch
             analyzer_j.df['end_epoch']=end_epoch
+            #analyzers_chunk = pd.concat([analyzers_chunk,analyzer_j.df])
             analyzers_chunk.append(analyzer_j.df)
 
                       

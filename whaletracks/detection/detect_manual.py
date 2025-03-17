@@ -55,7 +55,7 @@ def get_snr(picks,t,f,Sxx,utcstart_chunk,snr_limits=[12, 16],snr_calllength=4,sn
 
     med_noise = np.median(Sxx_sub)
     utc_t = [utcstart_chunk + j for j in t]   
-    snr_t_int=np.int((snr_calllength)/(utc_t[1] - utc_t[0]))
+    snr_t_int=np.int64((snr_calllength)/(utc_t[1] - utc_t[0]))
     for utc_time in peak_times:
 
         #import pdb; pdb.set_trace()
@@ -75,7 +75,7 @@ def get_snr(picks,t,f,Sxx,utcstart_chunk,snr_limits=[12, 16],snr_calllength=4,sn
 
     #Get SNR of 10 seconds of noise preceding call
     start_times=picks
-    noise_t_int=np.int((dur)/(utc_t[1] - utc_t[0]))
+    noise_t_int=np.int64((dur)/(utc_t[1] - utc_t[0]))
     start_snr=[]
     for utc_time in start_times:
         

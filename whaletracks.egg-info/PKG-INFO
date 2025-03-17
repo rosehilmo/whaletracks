@@ -1,4 +1,4 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.1
 Name: whaletracks
 Version: 1.0.2
 Summary: Methods for detecting blue and fin whale calls
@@ -21,15 +21,6 @@ Requires-Dist: notebook
 Requires-Dist: matplotlib
 Requires-Dist: homebrew
 Requires-Dist: git-lfs
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: license
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
 
 ![](https://travis-ci.com/uwescience/whaletracks.svg?branch=master)
 

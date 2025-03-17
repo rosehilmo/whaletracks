@@ -195,7 +195,8 @@ while utcend > utcstart_chunk:
 
         #converts detection dictionary into a dataframe, and appends it to the dataframe from previous chunks
         Blue_calls_sta=pd.DataFrame(dct)
-        Blue_calls = Blue_calls.append(Blue_calls_sta)
+        Blue_calls = pd.concat([Blue_calls,Blue_calls_sta])
+       #Blue_calls = Blue_calls.append(Blue_calls_sta)
         #import pdb; pdb.set_trace()
         Blue_calls.to_csv(CHUNK_FILE, index=False) #writes .csv chunk file
         
