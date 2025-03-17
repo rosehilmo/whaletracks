@@ -83,9 +83,6 @@ def plotwav(samp, data, filt_type='bandpass', filt_freqlim=[12, 18],
     sos = sig.butter(filt_order, filt_freqlim, 'bp', fs=samp, output = 'sos') 
     filtered_data = sig.sosfiltfilt(sos, data)
 
-    #sos = sig.butter(filt_order, [24, 26], btype='bandstop', fs=samp, output = 'sos') 
-    #filtered_data = sig.sosfiltfilt(sos, data)
-
     #[b, a] = sig.butter(filt_order, np.array(filt_freqlim)/samp, filt_type, 'ba') 
     #filtered_data = sig.filtfilt(b, a, data)
 
@@ -93,8 +90,8 @@ def plotwav(samp, data, filt_type='bandpass', filt_freqlim=[12, 18],
     datalength = data.size
     times = (np.arange(datalength)/samp) 
 
-    [f, t, Sxx] = sig.spectrogram(filtered_data, samp, 
-    window_type,int(samp*window_size),int(samp*window_size*overlap),return_onesided=True)
+    [f, t, Sxx] = sig.spectrogram(filtered_data, int(samp), 
+    window_type,int(samp*window_size),int(samp*window_size*overlap))
 
     #plot timeseries on upper axis
     if plotflag == True:
@@ -166,12 +163,11 @@ def buildkernel(f0, f1, bdwdth, dur, f, t, samp, plotflag=True,kernel_lims=finKe
     #import pdb; pdb.set_trace();
     if plotflag == True:
         plt.figure(PLT_KERNEL)
-        cmap = plt.get_cmap('bone')
-        plt.pcolormesh(tvec, fvec_sub, BlueKernel,cmap=cmap) #show plot of kernel
+        plt.pcolormesh(tvec, fvec_sub, BlueKernel) #show plot of kernel
         plt.axis([0, dur, np.min(fvec), np.max(fvec)])
-        #plt.gca().set_aspect('equal')
+        plt.gca().set_aspect('equal')
         plt.colorbar()
-        plt.ylim(10,30)
+        plt.ylim(ker_min,ker_max)
         plt.title('Blue whale B-call kernel')
         plt.show()
         #plt.clf()
@@ -198,10 +194,8 @@ def xcorr(t,f,Sxx,tvec,fvec,BlueKernel,plotflag=True,scale_func=defaultScaleFunc
         t_scale - correlation times (seconds)
         CorrVal_scale - correlation values
     """
-
-    #plt.rcParams.update({'font.size': 10})
-    Sxx_log1=10*np.log10(Sxx)
-    #Sxx_log1=Sxx_log1-np.min(Sxx_log1)
+    #Sxx_log1=10*np.log10(Sxx)
+    #Sxx_log=Sxx_log1-np.min(Sxx_log1)
 
     Sxx_log=Sxx
 #Cross-correlate kernel with spectrogram
@@ -244,17 +238,13 @@ def xcorr(t,f,Sxx,tvec,fvec,BlueKernel,plotflag=True,scale_func=defaultScaleFunc
         ax0.set_title('Spectrogram and detection scores of test data')
 
 #plot spectrogram on lower axis
-        cmap = plt.get_cmap('gist_heat')
+        cmap = plt.get_cmap('magma')
         vmin=np.median(Sxx_log)+2*np.std(Sxx_log)
         vmax=np.median(Sxx_log)
-        vmin1=np.median(Sxx_log1)+2*np.std(Sxx_log1)
-        vmax1=np.median(Sxx_log1)
         #vmin, vmax = scale_func(Sxx_log)
         norm = color.Normalize(vmin=vmin, vmax=vmax)
-        norm1 = color.Normalize(vmin=vmin1, vmax=vmax1)
         #plt.subplot(212)
-        #im = ax1.pcolormesh(t, f, Sxx_log, cmap=cmap,norm=norm) 
-        im = ax1.pcolormesh(t, f, Sxx_log1, cmap=cmap,norm=norm1) 
+        im = ax1.pcolormesh(t, f, Sxx_log, cmap=cmap,norm=norm) 
         fig.colorbar(im, ax=ax1,orientation='horizontal')
         ax1.set_xlim([t1, t2]) #look at spectrogram segment between given time boundaries
         ax1.set_ylim(ylim)
@@ -409,9 +399,7 @@ def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down):
     for det in dettimes:
         
         spect_chunk=np.zeros((len(f_sub),samp_down+samp_up))
-        minvec=abs(np.subtract(t,det))
-        timeind1=np.where(minvec == min(minvec))
-        #timeind1=np.where(t == det)
+        timeind1=np.where(t == det)
         timeind=timeind1[0][0]+2000
         startind=timeind-samp_up
         endind=timeind+samp_down
@@ -439,8 +427,6 @@ def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
     env_pad=np.concatenate((ones_pad[0],env,ones_pad[0]))
     stacked_env=np.zeros((1,samp_down+samp_up))
     
-    maxamp=[]
-
     for det in dettimes:
         
         env_chunk=np.zeros((1,samp_down+samp_up))
@@ -453,51 +439,13 @@ def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
         env_chunk = env_pad[startind:endind] #grab spectrogram subset for multiplication
 
         stacked_env=np.add(stacked_env,env_chunk)
-        maxamp += [10*np.log10(max(env_chunk))]
     
     stacked_t=np.transpose(range(len(stacked_env[0]))*(t[1]-t[0]))
-    return [stacked_t,stacked_env[0],maxamp]
+    return [stacked_t,stacked_env[0]]
 
-def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
 
-    #Sxx_log1=10*np.log10(Sxx)
-    #Sxx_log=Sxx_log1-np.min(Sxx_log1)
 
-    dettimes=analyzer_j.df.peak_time-utcstart_chunk
-    samp_down=math.ceil(dt_down/(t[1]-t[0]))
-    samp_up=math.ceil(dt_up/(t[1]-t[0]))
-    ones_pad=np.ones((1,2000))*np.median(env)
-    
-    env_pad=np.concatenate((ones_pad[0],env,ones_pad[0]))
-    #stacked_env=np.zeros((1,samp_down+samp_up))
-    
-    maxamp=[]
-    medamp = np.median(env)
-    snr = []
-    ambient_snr = []
-
-    for det in dettimes:
-        
-        env_chunk=np.zeros((1,samp_down+samp_up))
-        #import pdb; pdb.set_trace()
-        timeind1=(np.abs(t - det)).argmin()
-        timeind=timeind1+2000
-        startind=timeind-samp_up
-        endind=timeind+samp_down
-
-        env_chunk = env_pad[startind:endind] #grab spectrogram subset for multiplication
-
-        #stacked_env=np.add(stacked_env,env_chunk)
-        maxamp += [max(env_chunk)]
-        med_env_chunk = np.median(env_chunk)
-        ambient_snr += [10*np.log10(med_env_chunk/medamp)]
-        snr += [10*np.log10(max(env_chunk)/medamp)]
-        
-    
-    #stacked_t=np.transpose(range(len(stacked_env[0]))*(t[1]-t[0]))
-    return [maxamp,ambient_snr,snr,medamp]
-
-def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength=4,snr_freqwidth=.6,dur=10,fs=100,window_len=1):
+def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength=4,snr_freqwidth=.6,dur=10):
 
     peak_times=analyzer_j.df['peak_time'].to_list()
     snr=[]
@@ -509,7 +457,6 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
     med_noise = np.median(Sxx_sub)
     utc_t = [utcstart_chunk + j for j in t]   
     snr_t_int=np.int((snr_calllength/2)/(utc_t[1] - utc_t[0]))
-    db_amps = []
 
     for utc_time in peak_times:
         
@@ -522,16 +469,10 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
         db_max = np.max(Sxx_sub[:,t_peak_ind])
         max_loc = np.where(Sxx_sub[:,t_peak_ind] == db_max)
         freq_max=f[max_loc]
-        #f_inds = np.where(np.logical_and(f>=freq_max-snr_freqwidth/2, f<=freq_max+snr_freqwidth/2))
-        f_inds = np.where(np.logical_and(f>=snr_limits[0], f<=snr_limits[1]))
+        f_inds = np.where(np.logical_and(f>=freq_max-snr_freqwidth/2, f<=freq_max+snr_freqwidth/2))
         Sxx_tf_sub = Sxx_t_sub[f_inds,:]
         call_noise = np.median(Sxx_tf_sub)
-        ##############Make amplitude calculations######
-        noise_scale = np.mean(Sxx_tf_sub)/(window_len*(fs**2))
-        amp = np.sqrt(noise_scale*(snr_limits[1]-snr_limits[0]))
-        db_amps += [10.*np.log10(amp)]
-        snr = snr + [call_noise/med_noise]
-        #import pdb; pdb.set_trace()
+        snr = snr + [10*np.log10(call_noise/med_noise)]
 
     #Get SNR of 5 seconds of noise preceding call
     start_times=analyzer_j.df['start_time'].to_list()
@@ -565,7 +506,7 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
     #ambient_snr=[(start_snr[j]+end_snr[j])/2 for j in range(len(start_snr))]
     ambient_snr=[start_snr[j] for j in range(len(start_snr))]
     
-    return snr, ambient_snr, db_amps
+    return snr, ambient_snr
 
 
 def freq_analysis(analyzer_j,t,f,Sxx,utcstart_chunk,freq_window=[14, 16.5]):

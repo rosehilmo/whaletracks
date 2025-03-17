@@ -1,0 +1,9 @@
+pandas
+numpy~=1.16
+scipy
+nose
+obspy
+notebook
+matplotlib
+homebrew
+git-lfs

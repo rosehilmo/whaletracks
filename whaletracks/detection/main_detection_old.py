@@ -42,9 +42,8 @@ MP_TS_FLAG = False #Use if storing Fin multipath info
 MP_SPCT_FLAG = False
 PLOTFLAG_STACK = False
 CLIENT_CODE = 'IRIS'
-network="XF" #Network name "OO" for OOI, "7D" for Cascadia, "XF" for marianas, "XO" for alaska, "YO" for ENAM,"ZZ" puerto rico
-#station= ['418',"A05B","416",'415',"414","412","C04",'A03',"408"] #"X06" for ENAM  "LD41",  "B19" for marianas station #Specific station, or '*' for all available stations
-station='B19'
+network="YO" #Network name "OO" for OOI, "7D" for Cascadia, "XF" for marianas, "XO" for alaska, "YO" for ENAM
+station= "X08" #"X06" for ENAM  "LD41",  "B19" for marianas station #Specific station, or '*' for all available stations
 location='*'  # '*' for all available locations
 channel= 'HHZ' #Choose channels,  you'll want 'BHZ,HHZ' for Cascadia
                       #Check http://ds.iris.edu/mda/OO/ for OOI station channels
@@ -70,20 +69,20 @@ if FINFLAG:
     ######High pulse kernel parameters##############
     #F0 = 30 #37 #average start frequency
     #F1 = 20 #average end frequency
-    #BDWDTH = 3 # average bandwidth
+    #BDWDTH = 5 # average bandwidth
     #DUR = 1 #average duration
 
-     ######High pulse kernel parameters WD50##############
-    #F0 = 30 #37 #average start frequency
-    #F1 = 20 #average end frequency
+     ######High pulse kernel parameters WD59##############
+    #F0 = 32 #37 #average start frequency
+    #F1 = 22 #average end frequency
     #BDWDTH = 3 # average bandwidth
     #DUR = 1 #average duration
 
     ######Marianas pulse kernel parameters##############
-    F0 = 22 #average start frequency
-    F1 = 15 #average end frequency
-    BDWDTH = 3 # average bandwidth
-    DUR = .8 #average duration
+    #F0 = 20 #average start frequency
+    #F1 = 15 #average end frequency
+    #BDWDTH = 3 # average bandwidth
+    #DUR = .8 #average duration
 
     ######Enam pulse kernel parameters##############
     #F0 = 26 #average start frequency
@@ -92,28 +91,24 @@ if FINFLAG:
     #DUR = .8 #average duration
 
     ######Enam pulse kernel parameters MP##############
-    #F0 = 23 #average start frequency
-    #F1 = 17 #average end frequency
-    #BDWDTH = 3 # average bandwidth
-    #DUR = .8 #average duration
+    F0 = 22 #average start frequency
+    F1 = 18 #average end frequency
+    BDWDTH = 3 # average bandwidth
+    DUR = .8 #average duration
 
     ######Hawaii pulse kernel parameters##############
-    #F0 = 30 #average start frequency
-    #F1 = 20 #average end frequency
-    #BDWDTH = 3 # average bandwidth
-    #DUR = .8 #average duration
-
-    ######Puerto Rico pulse kernel parameters##############
-    #F0 = 45 #average start frequency
-    #F1 = 25 #average end frequency
-    #BDWDTH = 5 # average bandwidth
-    #DUR = 2 #average duration
-
-    ######HydRid kernel parameters##############
-    #F0 = 30 #average start frequency
-    #F1 = 20 #average end frequency
+    #F0 = 25 #average start frequency
+    #F1 = 15 #average end frequency
     #BDWDTH = 3 # average bandwidth
     #DUR = 1 #average duration
+
+    ######Puerto Rico pulse kernel parameters##############
+    #F0 = 36 #average start frequency
+    #F1 = 25 #average end frequency
+    #BDWDTH = 5 # average bandwidth
+    #DUR = 1 #average duration
+
+
 
 #Blue whale A-call characteristics
 #F0 = 14.5 #average start frequency
@@ -130,29 +125,20 @@ if FINFLAG:
 #STARTTIME = ("2015-12-10T23:00:00.000") # for fin testing puerto rico Kate Stafford
 #ENDTIME = ("2015-12-11T02:00:00.000")
 
-#STARTTIME = ("2011-01-03T01:30:00.000") #for Hawaii fins testing #1
-#ENDTIME = ("2011-01-03T06:30:00.000")
+#STARTTIME = ("2010-09-16T00:00:00.000") #for Hawaii fins testing
+#ENDTIME = ("2011-07-29T00:00:00.000")
 
-#STARTTIME = ("2011-02-22T23:30:00.000") #for Hawaii LOSE fins testing #2
-#ENDTIME = ("2011-02-23T00:30:00.000")
+#STARTTIME = ("2015-06-10T00:00:00.000") #for Puerto Rico fins full year
+#ENDTIME = ("2015-12-10T00:00:00.000")
 
-#STARTTIME = ("2010-12-07T18:00:00.000") #for Hawaii LOSE fins testing #3
-#ENDTIME = ("2010-12-07T20:59:00.000")
+STARTTIME = ("2015-01-26T22:00:00.000") #for ENAM fins MP
+ENDTIME = ("2015-01-26T22:59:00.000")
 
-#STARTTIME = ("2015-06-01T00:00:00.000") #for Puerto Rico fins full year
-#ENDTIME = ("2016-05-10T00:00:00.000")
+#STARTTIME = ("2015-02-17T23:00:00.000") #for ENAM fins MP X08 1
+#ENDTIME = ("2015-02-17T23:59:00.000")
 
-#STARTTIME = ("2016-01-25T12:30:00.000") #for Puerto Rico fins test
-#ENDTIME = ("2016-01-25T14:00:00.000")
-
-#STARTTIME = ("2015-01-26T22:00:00.000") #for ENAM fins MP
-#ENDTIME = ("2015-01-26T22:59:00.000")
-
-#STARTTIME = ("2014-12-27T06:00:00.000") #for ENAM fins MP X08 BEST
-#ENDTIME = ("2014-12-27T08:30:00.000")
-
-#STARTTIME = ("2015-02-28T23:30:00.000") #for ENAM fins MP X08 1
-#ENDTIME = ("2015-03-01T00:00:00.000")
+#STARTTIME = ("2015-02-09T02:00:00.000") #for ENAM fins testing 2
+#ENDTIME = ("2015-02-09T10:00:00.000")
 
 #STARTTIME = ("2019-02-11T03:00:00.000") #for Alaska fins testing
 #ENDTIME = ("2019-02-11T08:00:00.000")
@@ -173,43 +159,23 @@ if FINFLAG:
 #ENDTIME = ("2019-01-01T01:00:00.000")
 #ENDTIME = ("2019-01-20T11:00:00.000")
 
-#STARTTIME = ("2019-02-09T08:00:00.000") #for Alaska fins WD62 test
-#ENDTIME = ("2019-02-09T09:00:00.000")
-
 #STARTTIME = ("2019-02-16T15:00:00.000") #for Alaska fins WD62 test
 #ENDTIME = ("2019-02-16T17:00:00.000")
 
-#STARTTIME = ("2018-12-12T07:00:00.000") #for Alaska fins LT13 look for backbeats
-#ENDTIME = ("2018-12-12T11:00:00.000")
-
-#STARTTIME = ("2018-12-15T00:00:00.000") #for Alaska fins WD54 thick sed GOOD SEQUENCE
-#STARTTIME = ("2018-12-01T00:00:00.000") #for Alaska fins WD54 thick sed
-#ENDTIME = ("2019-03-01T00:00:00.000")
-
-#STARTTIME = ("2013-01-18T02:00:00.000") #for marianas fins
-#ENDTIME = ("2013-01-18T04:00:00.000")
+#STARTTIME = ("2011-11-01T00:00:00.000") #for marianas fins
+#ENDTIME = ("2012-04-01T00:00:00.000")
 
 #STARTTIME = ("2012-01-09T04:10:00.000") # for blue whale freq testing FN14A
 #ENDTIME = ("2012-01-09T04:20:00.000")
 
-#STARTTIME = ("2014-10-02T22:00:00.000") # for fin max call testing marianas #1
-#ENDTIME = ("2014-10-05T00:00:00.000")
+#STARTTIME = ("2012-03-30T20:00:00.000") # for fin max call testing marianas #1
+#ENDTIME = ("2012-03-30T23:59:00.000")
 
-#STARTTIME = ("2012-03-12T20:00:00.000") # for fin max call testing marianas #2
+#STARTTIME = ("2012-03-12T18:00:00.000") # for fin max call testing marianas #2
 #ENDTIME = ("2012-03-12T21:59:00.000")
 
-#STARTTIME = ("2013-01-18T05:00:00.000") # for fin max call testing marianas #4
-#ENDTIME = ("2013-01-18T05:30:00.000")
-
-#STARTTIME = ("2018-12-01T00:00:00.000") #for testing on HYS11 fins
-#ENDTIME = ("2019-03-01T00:00:00.000")
-
-#STARTTIME = ("2019-12-29T17:00:00.000") #for testing on HR fins
-#ENDTIME = ("2019-12-29T19:00:00.000")
-
-STARTTIME = ("2013-01-18T06:15:00.000") #for testing on HR fins 3
-ENDTIME = ("2013-01-18T10:30:00.000")
-
+#STARTTIME = ("2018-10-25T13:07:00.000") #for testing on FN14A fins
+#ENDTIME = ("2018-10-25T13:37:00.000")
 
 HALF_HOUR = 1800  # in seconds
 CHUNK_LENGTH=HALF_HOUR #secnods
@@ -255,7 +221,7 @@ def main(STARTTIME, ENDTIME,
             try:
                 st_raw=client.get_waveforms(network=network, station=station_ids, location=location,
                                             channel=channel, starttime=utcstart_chunk,
-                                            endtime=utcend_chunk, attach_response=False)
+                                            endtime=utcend_chunk, attach_response=True)
                 st_raw_exist=True
                 retry=5
             except:
@@ -272,10 +238,10 @@ def main(STARTTIME, ENDTIME,
 
         try:
             #Remove sensitivity and response, and filter data    
-            #st_raw.detrend(type="demean")
+            st_raw.detrend(type="demean")
             st_raw.detrend(type="linear")
-            #st_raw.remove_response(output='VEL',pre_filt=[1,3,48,49])
-            #st_raw.remove_sensitivity()
+            st_raw.remove_response(output='VEL',pre_filt=[1,3,48,49])
+            st_raw.remove_sensitivity()
         except:
             #if fails, waits to reset connection then tries again
             print('Connection reset error, retrying')
@@ -304,17 +270,17 @@ def main(STARTTIME, ENDTIME,
             if FINFLAG:
 
                 #Spectrogram metrics
-                window_size=2
+                window_size=.8
                 overlap=.95
-                freqlim=[10, 40]
+                freqlim=[10, 49]
                 #SNR metrics
-                snr_limits=[15, 22]
+                snr_limits=[20, 49]
                 snr_calllength=1
                 snr_freqwidth=5
                 #Event metrics
-                prominence= 5000 #.2 #.5 #min threshold   .1 for 0.3 second window
+                prominence= 1000 #.2 #.5 #min threshold   .1 for 0.3 second window
                 event_dur= .3 #minimum width of detection
-                distance= 22 #minimum distance between detections
+                distance= 12 #minimum distance between detections
                 rel_height=.8
 
             if FINFLAG == False:
@@ -337,9 +303,9 @@ def main(STARTTIME, ENDTIME,
             [f,t,Sxx]=detect.plotwav(tr_filt.stats.sampling_rate, tr_filt.data, window_size=window_size, overlap=overlap, plotflag=False,filt_freqlim=freqlim,ylim=freqlim)
             
             #Make detection kernel
-            [tvec, fvec, BlueKernel, freq_inds]=detect.buildkernel(f0, f1, bdwdth, dur, f, t, tr_filt.stats.sampling_rate, plotflag=PLOTFLAG, kernel_lims=detect.finKernelLims)
+            [tvec, fvec, BlueKernel, freq_inds]=detect.buildkernel(f0, f1, bdwdth, dur, f, t, tr_filt.stats.sampling_rate, plotflag=False, kernel_lims=detect.finKernelLims)
             
-            #import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             #subset spectrogram to be in same frequency range as kernel
             Sxx_sub=Sxx[freq_inds,:][0]
             f_sub=f[freq_inds]
@@ -529,7 +495,7 @@ def main(STARTTIME, ENDTIME,
                 #plt.show()
                 plt.close()
             #Calculate SNR info
-            [snr,ambient_snr,amps] = detect.get_snr(analyzer_j, t, f_sub, Sxx_sub, utcstart_chunk,snr_limits=snr_limits,snr_calllength=snr_calllength,snr_freqwidth=snr_freqwidth,dur=dur)
+            [snr,ambient_snr] = detect.get_snr(analyzer_j, t, f_sub, Sxx_sub, utcstart_chunk,snr_limits=snr_limits,snr_calllength=snr_calllength,snr_freqwidth=snr_freqwidth,dur=dur)
 
             #Add freq info for blue whales
             if FINFLAG == False:

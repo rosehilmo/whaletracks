@@ -1,7 +1,7 @@
 
 import sys
 
-sys.path.append('/Users/wader/Desktop/whaletracks/') #allows us to import my written function 
+sys.path.append('/Users/rhilmo/Documents/GitHub/whaletracks') #allows us to import my written function 
 
 #imports neccessary functions for code
 from obspy.clients.fdsn import Client

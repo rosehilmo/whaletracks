@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+whaletracks/_version.py
+whaletracks.egg-info/PKG-INFO
+whaletracks.egg-info/SOURCES.txt
+whaletracks.egg-info/dependency_links.txt
+whaletracks.egg-info/requires.txt
+whaletracks.egg-info/top_level.txt

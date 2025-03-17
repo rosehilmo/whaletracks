@@ -80,7 +80,7 @@ class EventAnalyzer(object):
         return pd.DataFrame(dct)
 
     
-    def mp_picker(self, times, values, utcstart_chunk, dur=.5, prominence=.1,distance=.1,rel_height=.5):
+    def mp_picker(self, times, values, utcstart_chunk, dur=.5, prominence=.1):
         """
         :param list-float times: offsets in seconds
         :param list-float values: values at times
@@ -89,11 +89,11 @@ class EventAnalyzer(object):
         """
         
         peak_indicies, peak_properties=sig.find_peaks(values,
-            distance=distance*(1/(times[1]-times[0])),
+            distance=.1*(1/(times[1]-times[0])),
             width=(dur/2)*(1/(times[1]-times[0])),
             prominence=prominence,
             wlen=SECONDS_IN_MINUTE*(1/(times[1]-times[0])),
-            rel_height=rel_height)
+            rel_height=.2)
 
         #import pdb; pdb.set_trace();
         for ind in range(len(peak_properties['prominences'])):
@@ -140,13 +140,11 @@ class EventAnalyzer(object):
         arrivals_sec = event_timesort['peak_time'].values.tolist()
         #arrivals = [utcstart_chunk + a for a in arrivals_sec]
         arrivals=arrivals_sec
-        time_diff=event_timesort[cn.DURATION].values.tolist()
         amplitudes = event_timesort['peak_signal'].values.tolist()
         nonelen=5-len(arrivals)
         nonelist=list(np.repeat(None, nonelen))
         arrivals=arrivals+nonelist
         amplitudes=amplitudes+nonelist
-        time_diff = time_diff+nonelist
         
         mp_dct = {k: [] for k in cn.SCM_MULTIPATHS.columns 
                if not k in EXCLUDED_COLUMNS}
@@ -161,11 +159,6 @@ class EventAnalyzer(object):
         mp_dct[cn.AMP_3].append(amplitudes[2])
         mp_dct[cn.AMP_4].append(amplitudes[3])
         mp_dct[cn.AMP_5].append(amplitudes[4])
-        mp_dct[cn.ERR_1].append(time_diff[0])
-        mp_dct[cn.ERR_2].append(time_diff[1])
-        mp_dct[cn.ERR_3].append(time_diff[2])
-        mp_dct[cn.ERR_4].append(time_diff[3])
-        mp_dct[cn.ERR_5].append(time_diff[4])
         mp_df = pd.DataFrame(mp_dct)
         
         return mp_df
