@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan  9 11:10:59 2020
+Created on Thu Jan  9 11:10:59 2024
 
-This code detects fin or blue whale calls using spectrogram cross-correlation and
-stores detection metrics in comma-separated variable files.
+This code detects Brydes whale calls and detects multipaths via autocorrelation of detection score
 
 @author: wader
 """
@@ -35,15 +34,7 @@ import basic_ranging_model as ranging
 import datetime
 
 
-
-FINFLAG = True  # True if detecting fins, False if detecting blues
-#CHUNK_FILE = "Blues_chunk_test.csv"
-# "AlaskaFins_LA21_chunk.csv" #Name of saved call file
-#CHUNK_FILE = "Marianas_B19_v2.csv"
-#FIN_DET_SERIES = "fin_series.csv"
 PLOTFLAG = False  # Use if troubleshooting and want to see plots.
-MP_TS_FLAG = True  # Use if storing Fin multipath info
-MP_SPCT_FLAG = True
 PLOTFLAG_STACK = False
 CLIENT_CODE = 'IRIS'
 CHUNK_FILE = "test.csv"
@@ -54,52 +45,34 @@ location='*'  # '*' for all available locations
 channel= 'HHZ' #Choose channels,  you'll want 'BHZ,HHZ' for Cascadia 'ELZ' for hawaii
   
 
-# Check http://ds.iris.edu/mda/OO/ for OOI station channels
 
-# DET_PATH=cn.SCM_DETECTION.csv_path
-#DET_PATH = "Marianas_B19_v2.csv"  # "AlaskaFins_LA21.csv" #Final save file
+# Build fin whale call characteristics
 
-if FINFLAG == False:
-    # Build blue whale B-call characteristics - wide
-    F0 = 16  # average start frequency
-    F1 = 14.3  # average end frequency
-    BDWDTH = 1  # average bandwidth
-    DUR = 15  # average duration
+######Mar pulse kernel parameters##############
+#F0 = 22  # average start frequency
+#F1 = 15  # average end frequency
+#BDWDTH = 3  # average bandwidth
+#DUR = .8  # average duration
 
-if FINFLAG:
-    # Build fin whale call characteristics
-
-    ######Mar pulse kernel parameters##############
-    F0 = 22  # average start frequency
-    F1 = 15  # average end frequency
-    BDWDTH = 3  # average bandwidth
-    DUR = .8  # average duration
-
-
+######Brydes pulse kernel parameters WD50##############
+F0 = 37 #average start frequency
+F1 = 33 #average end frequency
+BDWDTH = 2 # average bandwidth
+DUR = 3 #average duration
 
 
 STARTTIME = ("2012-02-03T00:00:00.000")  # oops
 ENDTIME = ("2013-02-05T00:00:00.000")
 
-
-
-HALF_HOUR = 1800  # in seconds
-# CHUNK_LENGTH=HALF_HOUR/5 #secnods
-
 # Download timeseries length
-DAY_LENGTH = 60*60*12  # Seconds
+DAY_LENGTH = 60*60*12  # How long of a chunk to download at a time in seconds
 
 # Chunk length for autocorrelation
-CHUNK_LENGTH = 60*10  # secnods
-
+CHUNK_LENGTH = 60*20  #How long of a chunk to use to estimate a range via autocorrelation
+dt_up = 2
+dt_down =9
 # starttime=("2011-10-01T12:00:00.000")
-# endtime=("2012-07-01T12:00:00.000")
-
-# Fin instruments: network ="XF" and station="B19"
-
-dt_up = .6  # 7
-dt_down = 8.2
-    
+# endtime=("2012-07-01T12:00:00.000")   
 
 
 
@@ -114,12 +87,12 @@ def main(STARTTIME, ENDTIME,
     :param UTCDateTime endtime: ex. ENDTIME = ("2012-03-30T22:38:00.000")
     """
 
-    if os.path.isfile(CHUNK_FILE) and is_restart:
+    if os.path.isfile(CHUNK_FILE) and is_restart: #checks to see if chunk files exist yet, loads if they do
         analyzers = [pd.read_csv(CHUNK_FILE)]
         auto_df_full = [pd.read_csv('auto_'+CHUNK_FILE)]
         #stack_df_full = [pd.read_csv('stack_Marianas_B19_v2.csv')]
     else:
-        analyzers = []
+        analyzers = [] #makes new variables if files do not exist
         auto_df_full = []
         #stack_df_full = []
 
@@ -127,17 +100,16 @@ def main(STARTTIME, ENDTIME,
     # ar=np.empty((0,2251))
     datetimearray = []
 
-    client = Client(client_code, user="rsharwade@rocketmail.com",
-                    password="EndgMk3hKe9J")
-    utcstart = UTCDateTime(STARTTIME)
-    utcend = UTCDateTime(ENDTIME)
+    client = Client(client_code) #finds IRIS client code
+    utcstart = UTCDateTime(STARTTIME) #finds datetime of start time
+    utcend = UTCDateTime(ENDTIME) #finds datetime of end time
 
-    utcstart_chunk = utcstart
-    utcend_chunk = utcstart + DAY_LENGTH
+    utcstart_chunk = utcstart #sets start of chunk to download
+    utcend_chunk = utcstart + DAY_LENGTH #sets end of chunk to download
     
 
     # Loop through times between starttime and endtime
-    while utcend > utcstart_chunk:
+    while utcend > utcstart_chunk: #loop through chunk times of data so long as the start chunk is less than the end time
         #import pdb; pdb.set_trace()
         print(utcstart_chunk)
 
@@ -145,26 +117,26 @@ def main(STARTTIME, ENDTIME,
         st_raw_exist = False
 
         # Attempt to get waveforms
-        while st_raw_exist == False and retry < 5:
+        while st_raw_exist == False and retry < 5: #tries up to 5 times to get timeseries data from IRIS
             try:
                 st_raw = client.get_waveforms(network=network, station=station_ids, location=location,
                                             channel=channel, starttime=utcstart_chunk - .5*CHUNK_LENGTH,
                                             endtime=utcend_chunk + .5*CHUNK_LENGTH, attach_response=True)
                 st_raw_exist = True
                 retry = 5
-            except:
+            except: 
                 retry = retry+1
                 st_raw_exist = False
                 print("Client failed: Retry " + str(retry) + " of 5 attempts")
 
         # Check if waveform data exists
-        if st_raw_exist == False:
-            print("WARNING: no data available from input station/times")
+        if st_raw_exist == False: 
+            print("WARNING: no data available from input station/times") #prints warning message and moves on to next chunk if data retrieval is unsucessful
             utcstart_chunk = utcstart_chunk+DAY_LENGTH
             utcend_chunk = utcend_chunk+DAY_LENGTH
             continue
 
-        try:
+        try: 
             # Remove sensitivity and response, and filter data
             st_raw.detrend(type="demean")
             # st_raw.detrend(type="linear")
@@ -179,7 +151,7 @@ def main(STARTTIME, ENDTIME,
         num_sta = len(st_raw)  # count stations in trace
         analyzers_chunk = []  # initiate chunk dataframe
         # Run detector on each station
-        for idx in range(1, num_sta+1):
+        for idx in range(1, num_sta+1): #iterates for each station (should only be 1 for this code)
 
             j = idx - 1
             tr = st_raw[j]
@@ -192,65 +164,30 @@ def main(STARTTIME, ENDTIME,
             if tr_filt.data[0] == tr_filt.data[1]:
                 continue
 
-            # Remove t-phases while calls are nearby
-            """
-            tphase_1=["2013-01-18T05:38:00.000","2013-01-18T05:43:00.000"]
-            #tphase_2=["2013-01-18T05:47:30.000","2013-01-18T05:51:40.000"]
-            utc_tphase_1 = [UTCDateTime(tphase_1[0]),UTCDateTime(tphase_1[1])]
-            #utc_tphase_2 = [UTCDateTime(tphase_2[0]),UTCDateTime(tphase_2[1])]
 
-            seconds_vec=np.arange(0,len(tr_filt.data))/tr_filt.stats.sampling_rate
-            
-            utcvec=[utcstart_chunk + s for s in seconds_vec]
-            
-            for inds in range(0,len(utcvec)):
-                if(utcvec[inds] > utc_tphase_1[0] and utcvec[inds] < utc_tphase_1[1]):
-                    tr_filt.data[inds] = 0
-                #if(utcvec[inds] > utc_tphase_2[0] and utcvec[inds] < utc_tphase_2[1]):
-                    #tr_filt.data[inds] = 0
-            
-            #plt.plot(tr_filt.data)
-            #plt.show()
-            """
-            
+            # Build detection metrics for  calls
 
-            # Build detection metrics for either fin or blue whale calls
-            if FINFLAG:
+            # Spectrogram metrics
+            window_size = .8
+            overlap = .95
+            freqlim = [10, 45]
+            # SNR metrics
+            snr_limits = [28, 40]
+            snr_calllength = 1
+            snr_freqwidth = 3
+            # Event metrics
+            prominence = 1000  # 4 #.2 #.5 #min threshold   .1 for 0.3 second window
+            event_dur = .1  # minimum width of detection
+            distance = 16  # minimum distance between detections
+            rel_height = .5
 
-                # Spectrogram metrics
-                window_size = .8
-                overlap = .95
-                freqlim = [10, 40]
-                # SNR metrics
-                snr_limits = [(F0+F1)/2-3, (F0+F1)/2+3]
-                snr_calllength = 1
-                snr_freqwidth = 3
-                # Event metrics
-                prominence = 500  # 4 #.2 #.5 #min threshold   .1 for 0.3 second window
-                event_dur = .1  # minimum width of detection
-                distance = 16  # minimum distance between detections
-                rel_height = .5
 
-            if FINFLAG == False:
-                # Spectrogram metrics
-                window_size = 5
-                overlap = .95
-                freqlim = [10, 20]
-                # SNR metrics
-                snr_limits = [14, 16]
-                snr_calllength = 4
-                snr_freqwidth = .6
-                # Event metrics
-                prominence = .5  # min threshold
-                event_dur = 5  # minimum width of detection
-                distance = 3.5  # minimum distance between detections
-                rel_height = .7
 
-            # Make spectrogram
+            # Make spectrogram of entire timeseries
             [f, t, Sxx] = detect.plotwav(tr_filt.stats.sampling_rate, tr_filt.data, window_size=window_size,
-                                        overlap=overlap, plotflag=PLOTFLAG, filt_freqlim=freqlim, ylim=freqlim)
+                                        overlap=overlap, plotflag=False, filt_freqlim=freqlim, ylim=freqlim)
 
-            # Make detection kernel
+            # Make detection kernel using spectrogram parameters
             [tvec, fvec, BlueKernel, freq_inds] = detect.buildkernel(
                 f0, f1, bdwdth, dur, f, t, tr_filt.stats.sampling_rate, plotflag=PLOTFLAG, kernel_lims=detect.finKernelLims)
 
@@ -261,6 +198,7 @@ def main(STARTTIME, ENDTIME,
             # Run detection using built kernel and spectrogram
             #[times, values]=detect.xcorr_log(t,f_sub,Sxx_sub,tvec,fvec,BlueKernel, plotflag=PLOTFLAG,ylim=freqlim)
 
+            # Run detection using built kernel and spectrogram
             [times, values] = detect.xcorr(
                 t, f_sub, Sxx_sub, tvec, fvec, BlueKernel, plotflag=PLOTFLAG, ylim=freqlim)
 
@@ -274,10 +212,10 @@ def main(STARTTIME, ENDTIME,
             #[snr,ambient_snr,db_amps] = detect.get_snr(analyzer_j, t, f_sub, Sxx_sub, utcstart_chunk,snr_limits=snr_limits,snr_calllength=snr_calllength,snr_freqwidth=snr_freqwidth,dur=dur,fs=tr_filt.stats.sampling_rate,window_len=window_size)
             #import pdb; pdb.set_trace()
 
-            if len(analyzer_j.df) >= 1:  # if MP_FLAG is True
-            #mp_df_time = pd.DataFrame(columns=cn.SCM_MULTIPATHS.columns)
+            if len(analyzer_j.df) >= 1:  # if there is at least one detected call in the entire day initiate multipath procedures
+            #Measure amplitude and snr Brydes whale calls from time series
                 samples = list(range(0, len(tr_filt.data)))
-                # Design bandpass filter to look between SNR limits of call (make these wide enough for both call types)
+                # Design bandpass filter to look between SNR limits of call 
                 sos = sig.butter(4, np.array(snr_limits), 'bp',
                                 fs=tr_filt.stats.sampling_rate, output='sos')
                 # filter timeseries with bandpass filter
@@ -287,31 +225,43 @@ def main(STARTTIME, ENDTIME,
                 # calculate seconds
                 seconds = np.array(
                     [s/tr_filt.stats.sampling_rate for s in samples])
-
+                #measure amplitude and snr of calls in filtered time series 
                 [maxamp, ambient_snr, snr, medamp] = detect.amps_snr_timeseries(
-                    seconds, amplitude_envelope, utcstart_chunk, analyzer_j, 3, 2)  # get amplitudes in array
-                #import pdb; pdb.set_trace()
-            else:
+                    seconds, amplitude_envelope, utcstart_chunk - .5*CHUNK_LENGTH, analyzer_j, 4, 4, pad_length = 6000)  # get amplitudes in array
+                
+            #Measure amplitude and snr in band lower than Brydes whale calls to check for EQ and t-phases
+                #Measure amplitude and snr from timeseries
+                # Design bandpass filter to look between SNR limits of call (make these wide enough for both call types)
+                sos_eq = sig.butter(4, np.array([5,15]), 'bp',
+                                fs=tr_filt.stats.sampling_rate, output='sos')
+                # filter timeseries with bandpass filter
+                filtered_data_eq = sig.sosfiltfilt(sos_eq, tr_filt.data)
+                # take hilbert envelope of timeseries
+                amplitude_envelope_eq = abs(hilbert(filtered_data_eq))
+                # calculate seconds
+                #measure amplitude and snr of low frequency noise in filtered time series 
+                [maxamp_eq, ambient_snr_eq, snr_eq, medamp_eq] = detect.amps_snr_timeseries(
+                    seconds, amplitude_envelope_eq, utcstart_chunk - .5*CHUNK_LENGTH, analyzer_j, 4, 4, pad_length = 6000)  # get amplitudes in array
+
+
+
+            else: #if no calls detected, make empty list
                 snr=[];
                 #import pdb; pdb.set_trace()
                 continue
 
-# Add freq info for blue whales
-            if FINFLAG == False:
-                # These freqency metrics only work for blue whale calls
-                [peak_freqs, start_freqs, end_freqs, peak_stds, start_stds, end_stds] = detect.freq_analysis(
-                    analyzer_j, t, f_sub, Sxx_sub, utcstart_chunk)
-            if FINFLAG:
-                # Fill frequency metric columns in csv with Nones if Fin calls
-                peak_freqs = list(np.repeat(None, len(snr)))
-                start_freqs = list(np.repeat(None, len(snr)))
-                end_freqs = list(np.repeat(None, len(snr)))
-                peak_stds = list(np.repeat(None, len(snr)))
-                start_stds = list(np.repeat(None, len(snr)))
-                end_stds = list(np.repeat(None, len(snr)))
-                #maxamps=list(np.repeat(None, len(snr)))
+            #Fill frequency columns with Nones, we don't use these metrics for multipath ranging
 
-            # Make dataframe with detections from current time chunk
+            # Fill frequency metric columns in csv with Nones if Fin calls
+            peak_freqs = list(np.repeat(None, len(snr)))
+            start_freqs = list(np.repeat(None, len(snr)))
+            end_freqs = list(np.repeat(None, len(snr)))
+            peak_stds = list(np.repeat(None, len(snr)))
+            start_stds = list(np.repeat(None, len(snr)))
+            end_stds = list(np.repeat(None, len(snr)))
+            #maxamps=list(np.repeat(None, len(snr)))
+
+            # Make dataframe with detections and their features from current time chunk
             station_codes = np.repeat(
                 tr_filt.stats.station, analyzer_j.df.shape[0])
             network_codes = np.repeat(
@@ -324,7 +274,7 @@ def main(STARTTIME, ENDTIME,
             analyzer_j.df['db_amps'] = 20*np.log10(maxamp)
             analyzer_j.df[cn.STATION_CODE] = station_codes
             analyzer_j.df[cn.NETWORK_CODE] = network_codes
-            analyzer_j.df['peak_frequency'] = peak_freqs
+            analyzer_j.df['peak_frequency'] = snr_eq
             analyzer_j.df['start_frequency'] = start_freqs
             analyzer_j.df['end_frequency'] = end_freqs
             analyzer_j.df['peak_frequency_std'] = peak_stds
@@ -334,6 +284,7 @@ def main(STARTTIME, ENDTIME,
             analyzer_j.df['start_epoch'] = start_epoch
             analyzer_j.df['end_epoch'] = end_epoch
             analyzers_chunk.append(analyzer_j.df)
+            #analyzers_chunk = pd.concat([analyzers_chunk,analyzer_j.df])
 
             # begin multipath method
             data_starttime = tr_filt.stats.starttime
@@ -342,17 +293,16 @@ def main(STARTTIME, ENDTIME,
             one_minute = int(60/(utc_times[1]-utc_times[0]))
 
             # find number of minutes for range calculation
-            #numchunks = round((utcend_chunk-utcstart_chunk)/60)
             numchunks = round(((tr_filt.stats.endtime-tr_filt.stats.starttime)-CHUNK_LENGTH)/60)
             
-            
+            #import pdb; pdb.set_trace()
 
-            for mp_iter in range(numchunks): #iterate for each minute in day
+            for mp_iter in range(numchunks): #iterate for each minute in day, calculates a multipath range for each minute that there are calls
                 print(mp_iter)
-                startind = one_minute*mp_iter
+                startind = one_minute*mp_iter #finds start and end indexes in series of chunk length used for autocorrelation 
                 endind = one_minute*mp_iter+timescount
 
-                times_sub = times[startind:endind]
+                times_sub = times[startind:endind] #indexes times and detection score to extract each chunk 
                 values_sub = values[startind:endind]
 
                 #import pdb; pdb.set_trace()
@@ -360,17 +310,15 @@ def main(STARTTIME, ENDTIME,
                 end_utc=utc_times[endind]
 
                 j_df_sub=analyzer_j.df.loc[(analyzer_j.df['peak_time'] >= start_utc) & 
-                        (analyzer_j.df['peak_time'] < end_utc)]
+                        (analyzer_j.df['peak_time'] < end_utc)] #Find all detection in chunk
 
                 min_df_sub=analyzer_j.df.loc[(analyzer_j.df['peak_time'] >= (start_utc+CHUNK_LENGTH/2-30)) & 
-                        (analyzer_j.df['peak_time'] < (end_utc-CHUNK_LENGTH/2+30))]
+                        (analyzer_j.df['peak_time'] < (end_utc-CHUNK_LENGTH/2+30))] #find all detections in center minute of chunk
 
-                #dt_up = .6  # 7
-                #dt_down = 8.2
 
-                datetimearray = datetimearray + [utcstart_chunk]
-
-                if MP_SPCT_FLAG and len(min_df_sub) >= 1:  # if MP_FLAG is True
+                #datetimearray = datetimearray + [utcstart_chunk] 
+                #import pdb; pdb.set_trace()
+                if len(min_df_sub) >= 1 and len(j_df_sub) >= 3:  #If there is at least one call in the center minute, calculate multipath range for the minute
                     """
                     #Stack detected calls by adding spectrograms together
                     [tstack,fstack,Sxxstack] = detect.stack_spect(t,f_sub,Sxx_sub,utcstart_chunk,analyzer_j,dt_up,dt_down)
@@ -382,15 +330,16 @@ def main(STARTTIME, ENDTIME,
                     #import pdb; pdb.set_trace()
                     # detection score autocorrelation
                     det_timesnew = np.linspace(
-                        min(times_sub), max(times_sub), len(times_sub)*10)
+                        min(times_sub), max(times_sub), len(times_sub)*10) #increase resolution of time values by 10x
                     from scipy.interpolate import interp1d
                     from scipy import signal
-                    #import pdb; pdb.set_trace()
+                    #Increase resolution of detection score series by cubic spline interpolation
                     f = interp1d(times_sub, values_sub, kind='cubic')
                     det_valuesnew1 = f(det_timesnew)
                     det_valuesnew = sig.detrend(det_valuesnew1, type='constant')
+                    #Autocorrelate hig-resolution detection score values
                     corr = signal.correlate(det_valuesnew, det_valuesnew)
-                    # autocorr_chunk=corr[len(det_timesnew)-1:]/max(corr)
+                    #Take center chunk of autocorrelated series that corresponds to search window
                     autocorr_chunk = corr[len(det_timesnew)-math.ceil(dt_up/(det_timesnew[1]-det_timesnew[0])):len(
                         det_timesnew)+math.ceil(dt_down/(det_timesnew[1]-det_timesnew[0]))]/max(corr)
                     dettimes_chunk = det_timesnew[0:len(autocorr_chunk)]
@@ -412,52 +361,40 @@ def main(STARTTIME, ENDTIME,
                     d1 = {'date': [utcstart_chunk+CHUNK_LENGTH/2], 'epoch': datetimeToEpoch([utcstart_chunk+CHUNK_LENGTH/2]), 'n_calls': [len(mp_df)], 'peaks': [np.median(analyzer_j.df['peak_signal'])], 'snr': [np.median(analyzer_j.df['snr'])], 'db_amps': [np.median(analyzer_j.df['db_amps'])]}
                     stack_df=pd.DataFrame(d1)
                     stack_df=pd.concat([stack_df, mp_df.head(1)], axis=1)
+                    stack_df_full.append(stack_df)
+                    new_stack_df=pd.concat(stack_df_full)
                     """
 
-                    # calculate multipaths for autocorrelated detection score
-                    mp_df_auto = pd.DataFrame(columns=cn.SCM_MULTIPATHS.columns)
-                    dettimes_chunk = dettimes_chunk-min(dettimes_chunk)
+                    # detect timings of multipaths using autocorrelated detection score
+                    mp_df_auto = pd.DataFrame(columns=cn.SCM_MULTIPATHS.columns) # makes new autocorrelation dataframe
+                    dettimes_chunk = dettimes_chunk-min(dettimes_chunk) 
                     mp_event = analyzer_j.mp_picker(
-                            dettimes_chunk, autocorr_chunk, start_utc, dur=.1, prominence=0, distance=1, rel_height=.5)
+                            dettimes_chunk, autocorr_chunk, start_utc, dur=.1, prominence=0, distance=1, rel_height=.5) #picks peaks in autocorrelation score to find multipath timings
                     for det in range(0, len(min_df_sub)):
                         
-                        mp_df_auto = mp_df_auto.append(mp_event, ignore_index=True)
+                        #mp_df_auto = mp_df_auto.append(mp_event, ignore_index=True)
+                        mp_df_auto = pd.concat([mp_event, mp_df_auto], ignore_index = True)
                     
+                    #import pdb; pdb.set_trace()
+                    min_df_sub=min_df_sub.reset_index(drop=True)
+                    mp_df_auto=mp_df_auto.reset_index(drop=True)
                     min_df_sub = pd.concat([min_df_sub, mp_df_auto], axis=1)
+                    #Record metrics included in each autocorrelation minute including the datetime, number of calls in minute, number of calls in autocorrelation chunk, average detection score, snr, and amplitudes
                     d2 = {'date': [start_utc+CHUNK_LENGTH/2], 'epoch': datetimeToEpoch([start_utc+CHUNK_LENGTH/2]), 'n_calls': [len(mp_df_auto)], 'sum_calls': [len(j_df_sub)], 'peaks': [
-                        np.median(j_df_sub['peak_signal'])], 'snr': [np.median(j_df_sub['snr'])], 'db_amps': [np.median(j_df_sub['db_amps'])]}
+                        np.median(j_df_sub['peak_signal'])], 'snr': [np.median(j_df_sub['snr'])], 'db_amps': [np.median(j_df_sub['db_amps'])], 'low_snr': [np.mean(j_df_sub['peak_frequency'])]}
                     auto_df = pd.DataFrame(d2)
                     auto_df = pd.concat([auto_df, mp_df_auto.head(1)], axis=1)
                     #import pdb; pdb.set_trace()
                     # make stack and auto dataframes
                     auto_df_full.append(auto_df)
-                    # stack_df_full.append(stack_df)
-                    #import pdb; pdb.set_trace()
-                    
-                    # new_stack_df=pd.concat(stack_df_full)
+                    #auto_df_full= pd.concat([auto_df_full,auto_df])
+                
                     
                     #new_stack_df.to_csv('stack_Marianas_B19_v2.csv', index=False)
 
 
-                    # Build array for peak displays
-                    #timeinds=np.where((stacktimes > mp_event['arrival_1'][0]) & (stacktimes < mp_event['arrival_1'][0] + 9))
-                    #timeinds = np.where((dettimes_chunk >= mp_event['arrival_1'][0]) & (
-                    #   dettimes_chunk <= mp_event['arrival_1'][0] + 9))
-                    #import pdb; pdb.set_trace()
-                    # y_values=stackvalues[timeinds]
-                    #y_values = autocorr_chunk[timeinds]
-                    #ar = np.append(ar, [y_values], axis=0)
-                    # times=stacktimes[timeinds]
-                    #times = dettimes_chunk[timeinds]
-                    #yax = times-min(times)
-                #else:
-                    #y_values = np.zeros((1, 205))
-                    # y_values=np.zeros((1,2251))
-                    #ar = np.append(ar, y_values, axis=0)
-
-                #import pdb; pdb.set_trace()
-                # plots stacked spectrogram
-                if PLOTFLAG_STACK and len(analyzer_j.df) > 1:
+                # plots stacked spectrogram: NOT CURRENTLY IN USE SINCE WE DO NOT USE STACKING METHOD
+                if PLOTFLAG_STACK and len(analyzer_j.df) >= 1:
 
                     Sxx_log1 = 10*np.log10(Sxxstack)
                     Sxx_log = Sxx_log1-np.min(Sxx_log1)
@@ -514,25 +451,24 @@ def main(STARTTIME, ENDTIME,
                 # Calculate SNR info
 
         
-        utcstart_chunk = utcstart_chunk+DAY_LENGTH
+            # Extend final dataframe with detections from current time chunk
+            analyzers.extend(analyzers_chunk) #extends detection dataframe with current chunk detections
+
+            #import pdb; pdb.set_trace()
+            try: #write detection and autocorrelation multipaths to csvs for each day loop
+                new_df = pd.concat(analyzers)
+                new_df.to_csv(chunk_pth, index=False)
+                new_auto_df = pd.concat(auto_df_full)
+                new_auto_df.to_csv('auto_'+CHUNK_FILE, index=False)
+                #new_stack_df.to_csv('stack_'+CHUNK_FILE, index=False)
+            except:
+                continue
+
+        utcstart_chunk = utcstart_chunk+DAY_LENGTH #move to next day 
         utcend_chunk = utcend_chunk+DAY_LENGTH
 
-        # Extend final dataframe with detections from current time chunk
-        analyzers.extend(analyzers_chunk)
 
-        #import pdb; pdb.set_trace()
-        new_df = pd.concat(analyzers)
-        new_df.to_csv(chunk_pth, index=False)
-        new_auto_df = pd.concat(auto_df_full)
-        new_auto_df.to_csv('auto_'+CHUNK_FILE, index=False)
-
-        try:
-            pickle.dump([datetimearray, ar, yax], open(
-                "peaks_Marianas_B19_v2_stack.p", "wb"))
-        except:
-            continue
-
-    if len(analyzers) == 0:
+    if len(analyzers) == 0: #write final detections dataframe after entire year is done looping
         print('WARNING: detections dataframe empty')
         final_analyzer_df = []
     elif len(analyzer_j.df) == 0:
@@ -542,21 +478,17 @@ def main(STARTTIME, ENDTIME,
         
         final_analyzer_df = pd.concat(analyzers)
         final_analyzer_df.to_csv(detection_pth, index=False)
-        #import pdb; pdb.set_trace()
-    #plt.pcolormesh(20*np.log10(np.transpose(ar)), cmap='magma')
-    #plt.colorbar()
-    # plt.show()
+   
 
-    # pickle.dump([datetimearray,ar,yax],open("peaks_Marianas_stack.p","wb"))
-    #import pdb; pdb.set_trace()
-    #return final_analyzer_df
-
+###########Code parameters start here#############
 
 sta_table = pd.read_csv('Station_info_Marianas_Brydes.csv',parse_dates=['startdate','enddate'])
-sta_table['startdate'] = sta_table['startdate']+datetime.timedelta(days=2)    
+#sta_table['startdate'] = sta_table['startdate']+datetime.timedelta(days=2)    
 
 
-for site_ind in range(1,3): #range(13,len(sta_table['Sites'])):
+
+
+for site_ind in range(0,7): #range(13,len(sta_table['Sites'])):
     network = "XF"  # Network name "OO" for OOI, "7D" for Cascadia, "XF" for PuertoRico, "XO" for alaska, "YO" for ENAM, "9A" for Hawaii, "ZZ" for puerto rico
     station = sta_table['Sites'][site_ind]    # "LD41" # "B19" for PuertoRico station #Specific station, or '*' for all available stations "X06" for ENAM, "LOSW" for Hawaii, "XABV" for puerto rico
     location = '*'  # '*' for all available locations
@@ -565,16 +497,17 @@ for site_ind in range(1,3): #range(13,len(sta_table['Sites'])):
 
     ss=1512
     sed_speed = 1512
-    t = sta_table['Reflector depth (m)'][site_ind] - depth
+    t = sta_table['Reflector depth (m)'][site_ind] - depth #estimates thickness of sediment layer
 
-    [distance,t0,t1,t2,t3,t0_1,t1_1,t1_2]=ranging.basic_ranging(depth,ss,sed_speed,t,plotflag=False)
+    [distance,t0,t1,t2,t3,t0_1,t1_1,t1_2]=ranging.basic_ranging(depth,ss,sed_speed,t,plotflag=False) #calculates estimated timings of arrivals using straight geometrical raypaths
     max_diff=max(np.subtract(t1_1,t0))
-    dt_down = max_diff + 0.5
+    dt_down = max_diff + 0.2 #sets MP search window based on maximum difference between multipaths + a small buffer
+    dt_up=2
 
-    CHUNK_FILE = station+'_mp_Brydes.csv'  
+    CHUNK_FILE = station+'_mp_Brydes_20min.csv'  #file name changes depending on station
     DET_PATH = CHUNK_FILE
-    STARTTIME = sta_table['startdate'][site_ind]
-    ENDTIME = sta_table['enddate'][site_ind]
+    STARTTIME = sta_table['startdate'][site_ind] #sets start date based on Station Info csv
+    ENDTIME = sta_table['enddate'][site_ind] #sets end date based on Station Info csv
 
     
 

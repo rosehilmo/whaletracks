@@ -1,0 +1,8 @@
+﻿Sites,Type,Instrument Depth (m),Reflector depth (m),Channel,startdate,enddate,Quality,Redo
+B19,OBS,5949,6099,HHZ,3/1/12,2/1/13,1,
+B01,OBS,5321,5471,HHZ,3/1/12,2/1/13,1,
+B02,OBS,5811,5961,HHZ,3/1/12,2/1/13,1,
+B09,OBS,5897,6047,HHZ,3/1/12,2/1/13,1,
+B12,OBS,5909,6059,HHZ,3/1/12,2/1/13,1,
+B18,OBS,5671,5821,HHZ,3/1/12,2/1/13,1,
+B20,OBS,5563,5713,HHZ,3/1/12,2/1/13,1,

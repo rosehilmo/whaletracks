@@ -171,7 +171,7 @@ def buildkernel(f0, f1, bdwdth, dur, f, t, samp, plotflag=True,kernel_lims=finKe
         plt.axis([0, dur, np.min(fvec), np.max(fvec)])
         #plt.gca().set_aspect('equal')
         plt.colorbar()
-        plt.ylim(10,30)
+        plt.ylim(f1-8,f0+8)
         plt.title('Blue whale B-call kernel')
         plt.show()
         #plt.clf()
@@ -393,7 +393,7 @@ def spect_autocorr(t,f,Sxx,seconds,plotflag=True,scale_func=defaultScaleFunction
 
  
  
-def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down):
+def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down,pad_length = 2000):
 
     #Sxx_log1=10*np.log10(Sxx)
     #Sxx_log=Sxx_log1-np.min(Sxx_log1)
@@ -401,7 +401,7 @@ def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down):
     dettimes=analyzer_j.df.peak_time-utcstart_chunk
     samp_down=math.ceil(dt_down/(t[1]-t[0]))
     samp_up=math.ceil(dt_up/(t[1]-t[0]))
-    ones_pad=np.ones((len(f_sub),2000))*np.median(Sxx)
+    ones_pad=np.ones((len(f_sub),pad_length))*np.median(Sxx)
     Sxx_pad=np.concatenate((ones_pad,Sxx,ones_pad),axis=1)
 
     stacked_spect=np.zeros((len(f_sub),samp_down+samp_up))
@@ -412,7 +412,7 @@ def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down):
         minvec=abs(np.subtract(t,det))
         timeind1=np.where(minvec == min(minvec))
         #timeind1=np.where(t == det)
-        timeind=timeind1[0][0]+2000
+        timeind=timeind1[0][0]+pad_length
         startind=timeind-samp_up
         endind=timeind+samp_down
 
@@ -426,7 +426,7 @@ def stack_spect(t,f_sub,Sxx,utcstart_chunk,analyzer_j,dt_up,dt_down):
     return [stacked_t,f_sub,stacked_spect]
 
 
-def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
+def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down,pad_length = 2000):
 
     #Sxx_log1=10*np.log10(Sxx)
     #Sxx_log=Sxx_log1-np.min(Sxx_log1)
@@ -434,7 +434,7 @@ def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
     dettimes=analyzer_j.df.peak_time-utcstart_chunk
     samp_down=math.ceil(dt_down/(t[1]-t[0]))
     samp_up=math.ceil(dt_up/(t[1]-t[0]))
-    ones_pad=np.ones((1,2000))*np.median(env)
+    ones_pad=np.ones((1,pad_length))*np.median(env)
     
     env_pad=np.concatenate((ones_pad[0],env,ones_pad[0]))
     stacked_env=np.zeros((1,samp_down+samp_up))
@@ -446,7 +446,7 @@ def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
         env_chunk=np.zeros((1,samp_down+samp_up))
         #import pdb; pdb.set_trace()
         timeind1=(np.abs(t - det)).argmin()
-        timeind=timeind1+2000
+        timeind=timeind1+pad_length
         startind=timeind-samp_up
         endind=timeind+samp_down
 
@@ -458,7 +458,7 @@ def stack_times(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
     stacked_t=np.transpose(range(len(stacked_env[0]))*(t[1]-t[0]))
     return [stacked_t,stacked_env[0],maxamp]
 
-def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
+def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down,pad_length = 2000):
 
     #Sxx_log1=10*np.log10(Sxx)
     #Sxx_log=Sxx_log1-np.min(Sxx_log1)
@@ -466,7 +466,9 @@ def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
     dettimes=analyzer_j.df.peak_time-utcstart_chunk
     samp_down=math.ceil(dt_down/(t[1]-t[0]))
     samp_up=math.ceil(dt_up/(t[1]-t[0]))
-    ones_pad=np.ones((1,2000))*np.median(env)
+    #ones_pad=np.ones((1,pad_length))*np.median(env)
+    ones_pad=np.zeros((1,pad_length))
+
     
     env_pad=np.concatenate((ones_pad[0],env,ones_pad[0]))
     #stacked_env=np.zeros((1,samp_down+samp_up))
@@ -481,7 +483,7 @@ def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
         env_chunk=np.zeros((1,samp_down+samp_up))
         #import pdb; pdb.set_trace()
         timeind1=(np.abs(t - det)).argmin()
-        timeind=timeind1+2000
+        timeind=timeind1+pad_length
         startind=timeind-samp_up
         endind=timeind+samp_down
 
@@ -492,6 +494,7 @@ def amps_snr_timeseries(t,env,utcstart_chunk,analyzer_j,dt_up,dt_down):
         med_env_chunk = np.median(env_chunk)
         ambient_snr += [10*np.log10(med_env_chunk/medamp)]
         snr += [10*np.log10(max(env_chunk)/medamp)]
+        #import pdb; pdb.set_trace()
         
     
     #stacked_t=np.transpose(range(len(stacked_env[0]))*(t[1]-t[0]))
@@ -508,7 +511,7 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
 
     med_noise = np.median(Sxx_sub)
     utc_t = [utcstart_chunk + j for j in t]   
-    snr_t_int=np.int((snr_calllength/2)/(utc_t[1] - utc_t[0]))
+    snr_t_int=np.int64((snr_calllength/2)/(utc_t[1] - utc_t[0]))
     db_amps = []
 
     for utc_time in peak_times:
@@ -535,7 +538,7 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
 
     #Get SNR of 5 seconds of noise preceding call
     start_times=analyzer_j.df['start_time'].to_list()
-    noise_t_int=np.int((dur/2)/(utc_t[1] - utc_t[0]))
+    noise_t_int=np.int64((dur/2)/(utc_t[1] - utc_t[0]))
     start_snr=[]
     for utc_time in start_times:
         
@@ -549,7 +552,7 @@ def get_snr(analyzer_j,t,f,Sxx,utcstart_chunk,snr_limits=[14, 16],snr_calllength
 
     #Get SNR of 3 seconds after call
     #end_times=analyzer_j.df['end_time'].to_list()
-    #noise_t_int=np.int((dur)/(utc_t[1] - utc_t[0]))
+    #noise_t_int=np.int64((dur)/(utc_t[1] - utc_t[0]))
     #end_snr=[]
     #for utc_time in end_times: 
         #t_peak_ind = utc_t.index(utc_time) 

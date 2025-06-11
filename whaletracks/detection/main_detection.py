@@ -11,7 +11,7 @@ stores detection metrics in comma-separated variable files.
 
 import sys
 
-sys.path.append('/Users/wader/Desktop/whaletracks/') 
+sys.path.append('/Users/rhilmo/Documents/GitHub/whaletracks/') 
 
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
@@ -35,7 +35,7 @@ import math
 
 FINFLAG = True #True if detecting fins, False if detecting blues
 #CHUNK_FILE = "Blues_chunk_test.csv"
-CHUNK_FILE = "test.csv" #"AlaskaFins_LA21_chunk.csv" #Name of saved call file
+CHUNK_FILE = "test_Brydes_B19_july.csv" #"AlaskaFins_LA21_chunk.csv" #Name of saved call file
 #FIN_DET_SERIES = "fin_series.csv"
 PLOTFLAG = True #Use if troubleshooting and want to see plots.
 MP_TS_FLAG = False #Use if storing Fin multipath info
@@ -50,7 +50,7 @@ channel= 'HHZ' #Choose channels,  you'll want 'BHZ,HHZ' for Cascadia
                       #Check http://ds.iris.edu/mda/OO/ for OOI station channels
 
 #DET_PATH=cn.SCM_DETECTION.csv_path
-DET_PATH="test.csv" #"AlaskaFins_LA21.csv" #Final save file
+DET_PATH="test_Brydes_B19_july.csv" #"AlaskaFins_LA21.csv" #Final save file
 
 if FINFLAG == False:
     #Build blue whale B-call characteristics - wide
@@ -67,23 +67,23 @@ if FINFLAG:
     #BDWDTH = 3 # average bandwidth
     #DUR = 1 #average duration
 
-    ######High pulse kernel parameters##############
+    ######High pulse kernel parameters WD50##############
     #F0 = 30 #37 #average start frequency
     #F1 = 20 #average end frequency
     #BDWDTH = 3 # average bandwidth
     #DUR = 1 #average duration
 
-     ######High pulse kernel parameters WD50##############
-    #F0 = 30 #37 #average start frequency
-    #F1 = 20 #average end frequency
-    #BDWDTH = 3 # average bandwidth
-    #DUR = 1 #average duration
+    ######Brydes pulse kernel parameters WD50##############
+    F0 = 37 #average start frequency
+    F1 = 33 #average end frequency
+    BDWDTH = 2 # average bandwidth
+    DUR = 3 #average duration
 
     ######Marianas pulse kernel parameters##############
-    F0 = 22 #average start frequency
-    F1 = 15 #average end frequency
-    BDWDTH = 3 # average bandwidth
-    DUR = .8 #average duration
+    #F0 = 22 #average start frequency
+    #F1 = 15 #average end frequency
+    #BDWDTH = 3 # average bandwidth
+    #DUR = .8 #average duration
 
     ######Enam pulse kernel parameters##############
     #F0 = 26 #average start frequency
@@ -207,8 +207,11 @@ if FINFLAG:
 #STARTTIME = ("2019-12-29T17:00:00.000") #for testing on HR fins
 #ENDTIME = ("2019-12-29T19:00:00.000")
 
-STARTTIME = ("2013-01-18T06:15:00.000") #for testing on HR fins 3
-ENDTIME = ("2013-01-18T10:30:00.000")
+STARTTIME = ("2012-03-22T19:00:00.000") #for testing on Brydes Whales
+ENDTIME = ("2012-03-22T23:30:00.000")
+
+#STARTTIME = ("2012-10-15T00:00:00.000") #for testing on Brydes whales October maximu
+#ENDTIME = ("2012-10-17T00:00:00.000")
 
 
 HALF_HOUR = 1800  # in seconds
@@ -306,9 +309,9 @@ def main(STARTTIME, ENDTIME,
                 #Spectrogram metrics
                 window_size=2
                 overlap=.95
-                freqlim=[10, 40]
+                freqlim=[25, 45]
                 #SNR metrics
-                snr_limits=[15, 22]
+                snr_limits=[30, 40]
                 snr_calllength=1
                 snr_freqwidth=5
                 #Event metrics
@@ -337,7 +340,7 @@ def main(STARTTIME, ENDTIME,
             [f,t,Sxx]=detect.plotwav(tr_filt.stats.sampling_rate, tr_filt.data, window_size=window_size, overlap=overlap, plotflag=False,filt_freqlim=freqlim,ylim=freqlim)
             
             #Make detection kernel
-            [tvec, fvec, BlueKernel, freq_inds]=detect.buildkernel(f0, f1, bdwdth, dur, f, t, tr_filt.stats.sampling_rate, plotflag=PLOTFLAG, kernel_lims=detect.finKernelLims)
+            [tvec, fvec, BlueKernel, freq_inds]=detect.buildkernel(f0, f1, bdwdth, dur, f, t, tr_filt.stats.sampling_rate, plotflag=False, kernel_lims=detect.finKernelLims)
             
             #import pdb; pdb.set_trace()
             #subset spectrogram to be in same frequency range as kernel
